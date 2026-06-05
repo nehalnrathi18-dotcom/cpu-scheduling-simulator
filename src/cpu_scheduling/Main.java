@@ -30,8 +30,11 @@ public class Main {
             System.out.println(block);
         }*/
         
-        FCFS fcfs=new FCFS();
-        fcfs.schedule(processes);
+        //FCFS fcfs=new FCFS();
+        //fcfs.schedule(processes);
+        
+        SJF sjf=new SJF();
+        sjf.schedule(processes);
         
         System.out.println("PID\tAT\tBT\tCT\tTAT\tWT");
 
@@ -53,7 +56,9 @@ public class Main {
         System.out.println("Avg Turnaround Time is : "+ TAT);
         System.out.println("Avg Waiting Time is: "+WT);
         
-        GanttChartPrinter.print(fcfs.getGanttChart());
+        //GanttChartPrinter.print(fcfs.getGanttChart());
+        
+        GanttChartPrinter.print(sjf.getGanttChart());
         
     }
 }
