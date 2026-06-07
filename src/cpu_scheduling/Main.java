@@ -33,8 +33,14 @@ public class Main {
         //FCFS fcfs=new FCFS();
         //fcfs.schedule(processes);
         
-        SJF sjf=new SJF();
-        sjf.schedule(processes);
+        //SJF sjf=new SJF();
+       // sjf.schedule(processes);
+        
+        //SRTF srtf = new SRTF();
+        //srtf.schedule(processes);
+        
+        RR rr = new RR();
+        rr.schedule(processes, 2);
         
         System.out.println("PID\tAT\tBT\tCT\tTAT\tWT");
 
@@ -58,7 +64,7 @@ public class Main {
         
         //GanttChartPrinter.print(fcfs.getGanttChart());
         
-        GanttChartPrinter.print(sjf.getGanttChart());
+        GanttChartPrinter.print(rr.getGanttChart());
         
     }
 }
