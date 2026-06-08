@@ -39,8 +39,11 @@ public class Main {
         //SRTF srtf = new SRTF();
         //srtf.schedule(processes);
         
-        RR rr = new RR();
-        rr.schedule(processes, 2);
+        //RR rr = new RR();
+        //rr.schedule(processes, 2);
+        
+        priorityscheduling ps=new priorityscheduling();
+        ps.schedule(processes);
         
         System.out.println("PID\tAT\tBT\tCT\tTAT\tWT");
 
@@ -64,7 +67,7 @@ public class Main {
         
         //GanttChartPrinter.print(fcfs.getGanttChart());
         
-        GanttChartPrinter.print(rr.getGanttChart());
+        GanttChartPrinter.print(ps.getGanttChart());
         
     }
 }
