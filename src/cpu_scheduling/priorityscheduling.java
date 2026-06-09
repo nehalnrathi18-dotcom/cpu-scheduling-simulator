@@ -1,6 +1,8 @@
 package cpu_scheduling;
 import java.util.*;
 
+//Smaller Priority Number = Higher Priority
+
 public class priorityscheduling{
 	
 	private List<GanttBlock> ganttChart=new ArrayList<>();
