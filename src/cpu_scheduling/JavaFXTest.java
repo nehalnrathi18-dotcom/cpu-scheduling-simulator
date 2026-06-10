@@ -2,7 +2,7 @@ package cpu_scheduling;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -46,6 +46,10 @@ public class JavaFXTest extends Application {
         VBox root = new VBox(10);
 
         Label title = new Label("CPU Scheduling Simulator");
+        title.setStyle(
+        	    "-fx-font-size:24px;" +
+        	    "-fx-font-weight:bold;"
+        	);
 
         ComboBox<String> algorithmBox = new ComboBox<>();
 
@@ -69,6 +73,7 @@ public class JavaFXTest extends Application {
         TextField arrivalField = new TextField();
 
         HBox arrivalRow = new HBox(10);
+        
         arrivalRow.getChildren().addAll(
                 new Label("Arrival Time:"),
                 arrivalField
@@ -103,37 +108,6 @@ public class JavaFXTest extends Application {
         priorityRow.setVisible(false);
         priorityRow.setManaged(false);
 
-        algorithmBox.setOnAction(e -> {
-
-            String algo = algorithmBox.getValue();
-
-            if(algo.equals("Priority Scheduling")) {
-
-                priorityRow.setVisible(true);
-                priorityRow.setManaged(true);
-
-                quantumRow.setVisible(false);
-                quantumRow.setManaged(false);
-            }
-
-            else if(algo.equals("Round Robin")) {
-
-                priorityRow.setVisible(false);
-                priorityRow.setManaged(false);
-
-                quantumRow.setVisible(true);
-                quantumRow.setManaged(true);
-            }
-
-            else {
-
-                priorityRow.setVisible(false);
-                priorityRow.setManaged(false);
-
-                quantumRow.setVisible(false);
-                quantumRow.setManaged(false);
-            }
-        });
         
         TableView<Process> table =
                 new TableView<>();
@@ -197,76 +171,211 @@ public class JavaFXTest extends Application {
                 wtCol
         );
         
-        table.setPrefHeight(200);
+        algorithmBox.setOnAction(e -> {
+
+            String algo = algorithmBox.getValue();
+
+            if(algo.equals("Priority Scheduling")) {
+
+            	prCol.setVisible(true);
+                priorityRow.setVisible(true);
+                priorityRow.setManaged(true);
+
+                quantumRow.setVisible(false);
+                quantumRow.setManaged(false);
+            }
+
+            else if(algo.equals("Round Robin")) {
+            	prCol.setVisible(false);
+
+                priorityRow.setVisible(false);
+                priorityRow.setManaged(false);
+
+                quantumRow.setVisible(true);
+                quantumRow.setManaged(true);
+            }
+
+            else {
+
+            	prCol.setVisible(false);
+                priorityRow.setVisible(false);
+                priorityRow.setManaged(false);
+
+                quantumRow.setVisible(false);
+                quantumRow.setManaged(false);
+            }
+        });
         
+        table.setPrefHeight(200);
+        prCol.setVisible(false);
+   
         
         Button addButton =
                 new Button("Add Process");
         
         Button runButton =
                 new Button("Run Algorithm");
-
+        Button clearButton =
+                new Button("Clear All");
+        Button deleteButton =
+                new Button("Delete Selected");
+        
         Label resultLabel =
                 new Label();
-        
-        HBox ganttBox = new HBox();
+        resultLabel.setStyle(
+        	    "-fx-font-size:18px; -fx-font-weight:bold;"
+        	);
+        HBox ganttBox = new HBox(5);
+        ScrollPane chartScroll =
+                new ScrollPane(ganttBox);
 
-        Label ganttTitle =
+        chartScroll.setFitToHeight(true);
+        chartScroll.setPrefHeight(120);
+
+        Label ganttLabel =
                 new Label("Gantt Chart:");
+    
+        clearButton.setOnAction(e -> {
+
+            processes.clear();
+
+            table.getItems().clear();
+
+            ganttBox.getChildren().clear();
+
+            resultLabel.setText("");
+
+            pidCounter = 1;
+        });
+        
+        deleteButton.setOnAction(e -> {
+
+            Process selected =
+                    table.getSelectionModel()
+                         .getSelectedItem();
+
+            if(selected != null) {
+
+                processes.remove(selected);
+
+                table.getItems().remove(selected);
+
+                resultLabel.setText(
+                    "Process Deleted"
+                );
+            }
+        });
+
         
         runButton.setOnAction(e -> {
 
             List<Process> temp =
                     copyProcesses();
 
-            String algo =
-                    algorithmBox.getValue();
+            String algo =algorithmBox.getValue();
+            List<GanttBlock> chart = null;
+            ganttBox.getChildren().clear();
 
             if(algo.equals("FCFS")) {
 
                 FCFS fcfs = new FCFS();
                 fcfs.schedule(temp);
+                chart = fcfs.getGanttChart();
             }
 
             else if(algo.equals("SJF")) {
 
                 SJF sjf = new SJF();
                 sjf.schedule(temp);
+                
+                chart = sjf.getGanttChart();
             }
 
             else if(algo.equals("SRTF")) {
 
                 SRTF srtf = new SRTF();
                 srtf.schedule(temp);
+                
+                chart = srtf.getGanttChart();
             }
 
             else if(algo.equals("Priority Scheduling")) {
-
-                priorityscheduling ps =
-                        new priorityscheduling();
+       
+                priorityscheduling ps =new priorityscheduling();
+               
 
                 ps.schedule(temp);
+                chart = ps.getGanttChart();
             }
 
             else if(algo.equals("Round Robin")) {
 
-                int quantum =
-                        Integer.parseInt(
-                            quantumField.getText()
+                try {
+
+                    if(quantumField.getText().isEmpty()) {
+
+                        resultLabel.setText(
+                            "Enter Quantum"
                         );
 
-                RR rr = new RR();
+                        return;
+                    }
 
-                rr.schedule(
-                        temp,
-                        quantum
-                );
+                    int quantum = Integer.parseInt(
+                                quantumField.getText()
+                            );
+
+                    if(quantum <= 0) {
+
+                        resultLabel.setText(
+                            "Quantum must be > 0"
+                        );
+
+                        return;
+                    }
+
+                    RR rr = new RR();
+
+                    rr.schedule(temp, quantum);
+
+                    chart = rr.getGanttChart();
+
+                } catch(Exception ex) {
+
+                    resultLabel.setText(
+                        "Quantum must be a number"
+                    );
+
+                    return;
+                }
+            }            
+            if(chart != null) {
+
+                for(GanttBlock g : chart) {
+
+                	Label block = new Label(
+                	        g.getPid()
+                	        + "\n"
+                	        + g.getStartTime()
+                	        + "-"
+                	        + g.getEndTime()
+                	);
+
+                    block.setStyle(
+                        "-fx-border-color:black;" +
+                        "-fx-padding:10;"
+                    );
+
+                    ganttBox.getChildren().add(block);
+                }
             }
 
             table.getItems().clear();
 
             table.getItems().addAll(temp);
-
+            
+          
+            
             MetricCalculate m =
                     new MetricCalculate();
 
@@ -293,7 +402,14 @@ public class JavaFXTest extends Application {
                         Integer.parseInt(
                                 burstField.getText()
                         );
+                if(at < 0 || bt <= 0) {
 
+                    resultLabel.setText(
+                        "AT >= 0 and BT > 0"
+                    );
+
+                    return;
+                }
                 int pr = 0;
 
                 if(algorithmBox.getValue().equals("Priority Scheduling")) {
@@ -301,6 +417,14 @@ public class JavaFXTest extends Application {
                     pr = Integer.parseInt(
                             priorityField.getText()
                     );
+                    if(pr < 0) {
+
+                        resultLabel.setText(
+                            "Priority cannot be negative"
+                        );
+
+                        return;
+                    }
                 }
                 Process p =
                         new Process(
@@ -312,6 +436,7 @@ public class JavaFXTest extends Application {
 
                 processes.add(p);
                 table.getItems().add(p);
+                resultLabel.setText("");
 
                 pidCounter++;
 
@@ -321,9 +446,9 @@ public class JavaFXTest extends Application {
                 quantumField.clear();
 
             } catch (Exception ex) {
-            	System.out.println("Invalid Input");
-            }
-        });
+                resultLabel.setText( "Please enter valid numbers" );
+            }      
+            });
 
         root.getChildren().addAll(
                 title,
@@ -335,13 +460,15 @@ public class JavaFXTest extends Application {
                 addButton,
                 table,
                 runButton,
+                clearButton,
+                deleteButton,
                 resultLabel,
-                ganttTitle,
-                ganttBox
+                ganttLabel,
+                chartScroll
         );
 
         Scene scene =
-                new Scene(root, 500, 450);
+                new Scene(root, 900, 550);
 
         stage.setTitle(
                 "CPU Scheduling Simulator"
