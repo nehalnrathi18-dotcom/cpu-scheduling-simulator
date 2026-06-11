@@ -7,6 +7,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.application.Application;
+import javafx.scene.control.TextArea;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -15,11 +16,26 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+
 
 public class JavaFXTest extends Application {
 
     private List<Process> processes = new ArrayList<>();
     private int pidCounter = 1;
+    private String[] colors = {
+    	    "#FF9999",
+    	    "#99CCFF",
+    	    "#99FF99",
+    	    "#FFD699",
+    	    "#D9B3FF",
+    	    "#FFB366",
+    	    "#66CCCC",
+    	    "#FF66B2"
+    	};
     
     private List<Process> copyProcesses() {
 
@@ -206,7 +222,7 @@ public class JavaFXTest extends Application {
             }
         });
         
-        table.setPrefHeight(200);
+        table.setPrefHeight(300);
         prCol.setVisible(false);
    
         
@@ -220,9 +236,84 @@ public class JavaFXTest extends Application {
         Button deleteButton =
                 new Button("Delete Selected");
         
+        Button clearInputButton =
+                new Button("Clear Inputs");
+        Button compareButton =
+                new Button("Compare All");
+        HBox buttonRow1 = new HBox(10);
+
+        buttonRow1.getChildren().addAll(
+            addButton,
+            clearInputButton,
+            runButton
+        );
+
+        HBox buttonRow2 = new HBox(10);
+
+        buttonRow2.getChildren().addAll(
+            compareButton,
+            clearButton,
+            deleteButton
+        );
         Label resultLabel =
                 new Label();
-        resultLabel.setStyle(
+        
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        
+        TableView<ComparisonResult> compareTable =
+                new TableView<>();
+
+        TableColumn<ComparisonResult, String> algoCol =
+                new TableColumn<>("Algorithm");
+
+        algoCol.setCellValueFactory(
+                new PropertyValueFactory<>("algorithm")
+        );
+
+        TableColumn<ComparisonResult, Double> tatCompareCol =
+                new TableColumn<>("Avg TAT");
+
+        tatCompareCol.setCellValueFactory(
+                new PropertyValueFactory<>("avgTAT")
+        );
+
+        TableColumn<ComparisonResult, Double> wtCompareCol =
+                new TableColumn<>("Avg WT");
+
+        wtCompareCol.setCellValueFactory(
+                new PropertyValueFactory<>("avgWT")
+        );
+
+        compareTable.getColumns().addAll(
+                algoCol,
+                tatCompareCol,
+                wtCompareCol
+        );
+        algoCol.setPrefWidth(300);
+        tatCompareCol.setPrefWidth(250);
+        wtCompareCol.setPrefWidth(250);
+
+        compareTable.setPrefHeight(220);
+        compareTable.setColumnResizePolicy(
+        	    TableView.CONSTRAINED_RESIZE_POLICY
+        	);
+
+        BarChart<String, Number> barChart =
+                new BarChart<>(xAxis, yAxis);
+
+        barChart.setTitle("Algorithm Comparison on basis of waiting time");
+
+        xAxis.setLabel("Algorithm");
+        yAxis.setLabel("Average Waiting Time");
+
+        barChart.setPrefHeight(200);
+        barChart.setLegendVisible(false);
+        barChart.setAnimated(true);
+        barChart.setCategoryGap(20);
+        barChart.setBarGap(3);
+
+                resultLabel.setStyle(
         	    "-fx-font-size:18px; -fx-font-weight:bold;"
         	);
         HBox ganttBox = new HBox(5);
@@ -230,7 +321,7 @@ public class JavaFXTest extends Application {
                 new ScrollPane(ganttBox);
 
         chartScroll.setFitToHeight(true);
-        chartScroll.setPrefHeight(120);
+        chartScroll.setPrefHeight(180);
 
         Label ganttLabel =
                 new Label("Gantt Chart:");
@@ -265,7 +356,195 @@ public class JavaFXTest extends Application {
                 );
             }
         });
+        clearInputButton.setOnAction(e -> {
 
+            arrivalField.clear();
+
+            burstField.clear();
+
+            priorityField.clear();
+
+            quantumField.clear();
+
+            resultLabel.setText("");
+        });
+        
+        compareButton.setOnAction(e -> {
+
+        	compareTable.getItems().clear();
+        	barChart.getData().clear();
+
+        	XYChart.Series<String, Number> series =
+        	        new XYChart.Series<>();
+        	
+        	MetricCalculate m = new MetricCalculate();
+
+        	double bestWT = Double.MAX_VALUE;
+        	final String[] bestAlgo = {""};
+
+        	// FCFS
+        	List<Process> fcfsList = copyProcesses();
+
+        	FCFS fcfs = new FCFS();
+        	fcfs.schedule(fcfsList);
+
+        	double fcfsWT = m.AvgWaitingTime(fcfsList);
+        	series.getData().add(
+        		    new XYChart.Data<>("FCFS", fcfsWT)
+        		);
+
+        	compareTable.getItems().add(
+        		    new ComparisonResult(
+        		        "FCFS",
+        		        m.AvgTAT(fcfsList),
+        		        fcfsWT
+        		    )
+        		);
+        	if(fcfsWT < bestWT) {
+        	    bestWT = fcfsWT;
+        	    bestAlgo[0] = "FCFS";
+        	}
+
+        	// SJF
+        	List<Process> sjfList = copyProcesses();
+
+        	SJF sjf = new SJF();
+        	sjf.schedule(sjfList);
+
+        	double sjfWT = m.AvgWaitingTime(sjfList);
+        	series.getData().add(
+        		    new XYChart.Data<>("SJF", sjfWT)
+        		);
+
+        	compareTable.getItems().add(
+        		    new ComparisonResult(
+        		        "SJF",
+        		        m.AvgTAT(sjfList),
+        		        sjfWT
+        		    )
+        		);
+        	if(sjfWT < bestWT) {
+        	    bestWT = sjfWT;
+        	    bestAlgo[0] = "SJF";
+        	}
+
+        	// SRTF
+        	List<Process> srtfList = copyProcesses();
+
+        	SRTF srtf = new SRTF();
+        	srtf.schedule(srtfList);
+
+        	double srtfWT = m.AvgWaitingTime(srtfList);
+        	series.getData().add(
+        		    new XYChart.Data<>("SRTF", srtfWT)
+        		);
+
+        	compareTable.getItems().add(
+        		    new ComparisonResult(
+        		        "SRTF",
+        		        m.AvgTAT(srtfList),
+        		        srtfWT
+        		    )
+        		);
+
+        	if(srtfWT < bestWT) {
+        	    bestWT = srtfWT;
+        	    bestAlgo[0] = "SRTF";
+        	}
+
+        	// Priority Scheduling
+        	List<Process> priorityList = copyProcesses();
+
+        	priorityscheduling ps =
+        	        new priorityscheduling();
+
+        	ps.schedule(priorityList);
+
+        	double priorityWT =m.AvgWaitingTime(priorityList);
+        	
+        	series.getData().add(
+        		    new XYChart.Data<>("Priority", priorityWT)
+        		);
+
+        	compareTable.getItems().add(
+        		    new ComparisonResult(
+        		        "Priority",
+        		        m.AvgTAT(priorityList),
+        		        priorityWT
+        		    )
+        		);
+
+        	if(priorityWT < bestWT) {
+        	    bestWT = priorityWT;
+        	    bestAlgo[0] = "Priority";
+        	}
+
+        	// Round Robin
+        	List<Process> rrList = copyProcesses();
+
+        	RR rr = new RR();
+
+        	int quantum = 2;
+        	rr.schedule(rrList, quantum);
+
+        	double rrWT =m.AvgWaitingTime(rrList);
+        	series.getData().add(
+        		    new XYChart.Data<>("Round Robin", rrWT)
+        		);
+
+        	compareTable.getItems().add(
+        		    new ComparisonResult(
+        		        "Round Robin",
+        		        m.AvgTAT(rrList),
+        		        rrWT
+        		    )
+        		);
+
+        	if(rrWT < bestWT) {
+        	    bestWT = rrWT;
+        	    bestAlgo[0] = "Round Robin";
+        	}
+
+        	resultLabel.setText(
+        		    "Best Algorithm: " + bestAlgo[0] +
+        		    "    Lowest Average WT: " + bestWT
+        		);
+        	
+        	barChart.getData().add(series);
+        	barChart.applyCss();
+        	
+        	for (int i = 0; i < series.getData().size(); i++) {
+
+        	    XYChart.Data<String, Number> data =
+        	            series.getData().get(i);
+
+        	    if (data.getNode() != null) {
+
+        	        switch(i) {
+
+        	            case 0:
+        	                data.getNode().setStyle("-fx-bar-fill:#FF9999;");
+        	                break;
+
+        	            case 1:
+        	                data.getNode().setStyle("-fx-bar-fill:#99CCFF;");
+        	                break;
+
+        	            case 2:
+        	                data.getNode().setStyle("-fx-bar-fill:#99FF99;");
+        	                break;
+
+        	            case 3:
+        	                data.getNode().setStyle("-fx-bar-fill:#FFD699;");
+        	                break;
+
+        	            case 4:
+        	                data.getNode().setStyle("-fx-bar-fill:#D9B3FF;");
+        	                break;
+        	        }
+        	    }
+        	}
+        });
         
         runButton.setOnAction(e -> {
 
@@ -357,17 +636,36 @@ public class JavaFXTest extends Application {
                 	        g.getPid()
                 	        + "\n"
                 	        + g.getStartTime()
-                	        + "-"
+                	        + "->"
                 	        + g.getEndTime()
+                	        
                 	);
+                
+                	String color;
 
-                    block.setStyle(
-                        "-fx-border-color:black;" +
-                        "-fx-padding:10;"
-                    );
+                	if(g.getPid().equals("Idle")) {
 
-                    ganttBox.getChildren().add(block);
+                	    color = "#D3D3D3";
+                	}
+                	else {
+
+                	    int index =
+                	        Integer.parseInt(
+                	            g.getPid().replace("P", "")
+                	        ) - 1;
+
+                	    color = colors[index % colors.length];
+                	}
+                	
+                	block.setStyle(
+                	    "-fx-border-color:black;" +
+                	    "-fx-background-color:" + color + ";" +
+                	    "-fx-padding:5;" +
+                	    "-fx-font-weight:bold;"
+                	);            
+                	ganttBox.getChildren().add(block);
                 }
+                
             }
 
             table.getItems().clear();
@@ -457,11 +755,11 @@ public class JavaFXTest extends Application {
                 burstRow,
                 priorityRow,
                 quantumRow,
-                addButton,
+                buttonRow1,
+                buttonRow2,
                 table,
-                runButton,
-                clearButton,
-                deleteButton,
+                compareTable,
+                barChart,
                 resultLabel,
                 ganttLabel,
                 chartScroll
@@ -469,7 +767,7 @@ public class JavaFXTest extends Application {
 
         Scene scene =
                 new Scene(root, 900, 550);
-
+       
         stage.setTitle(
                 "CPU Scheduling Simulator"
         );
