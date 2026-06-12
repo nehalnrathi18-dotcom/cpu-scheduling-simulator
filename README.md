@@ -66,16 +66,16 @@ Each process gets a fixed time slice called **quantum**. After the quantum expir
 ## Screenshots
 
 ### Main Interface
-![Main Interface](screenshots/main.png)
+![Main Interface](main.png)
 
 ### Gantt Chart Visualization
-![Gantt Chart](screenshots/gantt.png)
+![Gantt Chart](gantt.png)
 
 ### Algorithm Comparison Table
-![Comparison Table](screenshots/comparison.png)
+![Comparison Table](comparison.png)
 
 ### Bar Chart Comparison
-![Bar Chart](screenshots/barchart.png)
+![Bar Chart](barchart.png)
 
 ---
 
